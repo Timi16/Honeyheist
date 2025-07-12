@@ -1,14 +1,14 @@
 // REAL HIGH-QUALITY IMAGES - COMPLETE SET FOR HONEY HEIST
 export const REAL_IMAGES = {
   // Hero & Backgrounds - WORKING LINKS ONLY
-  heroBg: "https://images.unsplash.com/photo-1518709268805-4e9042af2176?w=1920&h=1080&fit=crop&q=80",
+  heroBg: "https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=1920&h=1080&fit=crop&q=80",
   
   // Execute the Heist Section Images
-  neonCity: "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800&h=600&fit=crop&q=80",
+  neonCity: "https://images.unsplash.com/photo-1480714378408-67cf0d13bc1f?w=800&h=600&fit=crop&q=80",
   teamWork: "https://images.unsplash.com/photo-1522202176988-66273c2fd55f?w=800&h=600&fit=crop&q=80",
   
   // Heist Features Images
-  vaultDoor: "https://images.unsplash.com/photo-1614064641938-3bbee52c7ec1?w=400&h=300&fit=crop&q=80",
+  vaultDoor: "https://images.unsplash.com/photo-1565814329452-e1efa11c5b89?w=400&h=300&fit=crop&q=80",
   coding: "https://images.unsplash.com/photo-1461749280684-dccba630e2f6?w=400&h=300&fit=crop&q=80",
   securitySystem: "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=400&h=300&fit=crop&q=80",
   
@@ -22,11 +22,11 @@ export const REAL_IMAGES = {
 
   // Vault Thumbnails Pool - REAL WORKING IMAGES
   vaultThumbnails: [
-    "https://images.unsplash.com/photo-1614064641938-3bbee52c7ec1?w=200&h=120&fit=crop&q=80",
+    "https://images.unsplash.com/photo-1565814329452-e1efa11c5b89?w=200&h=120&fit=crop&q=80",
     "https://images.unsplash.com/photo-1541354329998-f4d9a9f9297f?w=200&h=120&fit=crop&q=80",
     "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=200&h=120&fit=crop&q=80",
     "https://images.unsplash.com/photo-1639762681485-074b7f938ba0?w=200&h=120&fit=crop&q=80",
-    "https://images.unsplash.com/photo-1518709268805-4e9042af2176?w=200&h=120&fit=crop&q=80",
+    "https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=200&h=120&fit=crop&q=80",
   ],
 }
 

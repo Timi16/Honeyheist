@@ -237,28 +237,24 @@ export default function HomePage() {
           <div className="grid md:grid-cols-4 gap-8">
             {[
               {
-                step: "01",
                 title: "Assemble Your Crew",
                 description: "Connect your wallet and join a heist room with up to 4 players",
                 icon: Users,
                 image: REAL_IMAGES.meeting,
               },
               {
-                step: "02",
                 title: "Choose Your Role",
                 description: "Select from Hacker, Muscle, Lookout, or Driver - each with unique abilities",
                 icon: Target,
                 image: REAL_IMAGES.planning,
               },
               {
-                step: "03",
                 title: "Execute the Heist",
                 description: "Coordinate in real-time to bypass security and collect the loot",
                 icon: Zap,
                 image: REAL_IMAGES.vaultDoor,
               },
               {
-                step: "04",
                 title: "Claim Rewards",
                 description: "Successfully escape and claim your crypto rewards on the blockchain",
                 icon: Trophy,
@@ -267,9 +263,6 @@ export default function HomePage() {
             ].map((item, index) => (
               <div key={index} className="relative group">
                 <div className="cyber-card h-full text-center group-hover:scale-105 transition-all duration-300">
-                  {/* Step number */}
-                  <div className="text-6xl font-bold text-cyan-400/20 mb-4">{item.step}</div>
-
                   {/* Icon */}
                   <div className="relative w-20 h-20 mx-auto mb-6">
                     <div className="absolute inset-0 bg-gradient-to-r from-cyan-400 to-purple-600 rounded-full p-4">
