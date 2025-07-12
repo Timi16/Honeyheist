@@ -2,21 +2,21 @@
 export const REAL_IMAGES = {
   // Hero & Backgrounds - WORKING LINKS ONLY
   heroBg: "https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=1920&h=1080&fit=crop&q=80",
-  
+
   // Execute the Heist Section Images
-  neonCity: "https://images.unsplash.com/photo-1480714378408-67cf0d13bc1f?w=800&h=600&fit=crop&q=80",
+  neonCity: "https://plus.unsplash.com/premium_photo-1726869883329-c357984ad475?w=800&h=600&fit=crop&q=80", // FIXED: Working cyberpunk city image
   teamWork: "https://images.unsplash.com/photo-1522202176988-66273c2fd55f?w=800&h=600&fit=crop&q=80",
-  
+
   // Heist Features Images
   vaultDoor: "https://images.unsplash.com/photo-1565814329452-e1efa11c5b89?w=400&h=300&fit=crop&q=80",
   coding: "https://images.unsplash.com/photo-1461749280684-dccba630e2f6?w=400&h=300&fit=crop&q=80",
   securitySystem: "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=400&h=300&fit=crop&q=80",
-  
+
   // How It Works Section Images
   meeting: "https://images.unsplash.com/photo-1556761175-b413da4baf72?w=400&h=300&fit=crop&q=80",
   planning: "https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?w=400&h=300&fit=crop&q=80",
   blockchain: "https://images.unsplash.com/photo-1639762681485-074b7f938ba0?w=400&h=300&fit=crop&q=80",
-  
+
   // Features Section Images
   servers: "https://images.unsplash.com/photo-1558494949-ef010cbdcc31?w=800&h=600&fit=crop&q=80",
 
