@@ -10,7 +10,7 @@ const inter = Inter({ subsets: ["latin"] })
 export const metadata: Metadata = {
   title: "Honey Heist - Crypto Heist Game",
   description: "The ultimate crypto heist experience",
-    generator: 'v0.dev'
+    generator: 'Honey-Heist'
 }
 
 export default function RootLayout({
