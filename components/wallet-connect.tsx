@@ -4,7 +4,7 @@ import { Wallet, ChevronDown } from "lucide-react"
 import { useWallet, ConnectionProvider, WalletProvider } from '@solana/wallet-adapter-react'
 import { PhantomWalletAdapter } from '@solana/wallet-adapter-wallets'
 import { clusterApiUrl } from '@solana/web3.js'
-import { connectWallet } from './services/wallet'
+import { connectWallet } from '@/services/wallet'
 
 const network = 'devnet'
 const endpoint = clusterApiUrl(network)
