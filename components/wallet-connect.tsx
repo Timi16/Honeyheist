@@ -1,22 +1,74 @@
+// WalletConnect.tsx - Fixed version with proper wallet selection
 "use client"
-import { useState } from "react"
+
+import { useState, useEffect, useMemo } from "react"
 import { Wallet, ChevronDown } from "lucide-react"
-import { useWallet, ConnectionProvider, WalletProvider } from '@solana/wallet-adapter-react'
-import { PhantomWalletAdapter } from '@solana/wallet-adapter-wallets'
+import { ConnectionProvider, WalletProvider, useWallet } from '@solana/wallet-adapter-react'
+import { WalletModalProvider, useWalletModal } from '@solana/wallet-adapter-react-ui'
+import { PhantomWalletAdapter } from '@solana/wallet-adapter-phantom'
+import { SolflareWalletAdapter } from '@solana/wallet-adapter-solflare'
 import { clusterApiUrl } from '@solana/web3.js'
+
+// Import wallet adapter CSS
+import '@solana/wallet-adapter-react-ui/styles.css'
+
+// Import your service 
 import { connectWallet } from '@/services/wallet'
 
-const network = 'devnet'
-const endpoint = clusterApiUrl(network)
-const wallets = [new PhantomWalletAdapter()]
+// WalletProvider Wrapper Component
+export function WalletProviderWrapper({ children }: { children: React.ReactNode }) {
+  // You can use 'devnet', 'testnet', or 'mainnet-beta'
+  const network = 'devnet'
+  const endpoint = useMemo(() => clusterApiUrl(network), [network])
 
-export function WalletConnect() {
-  const { connect, disconnect, publicKey, connected } = useWallet()
+  const wallets = useMemo(
+    () => [
+      new PhantomWalletAdapter(),
+      new SolflareWalletAdapter(),
+    ].filter((adapter, index, array) => 
+      array.findIndex(a => a.name === adapter.name) === index
+    ),
+    []
+  )
+
+  return (
+    <ConnectionProvider endpoint={endpoint}>
+      <WalletProvider wallets={wallets} autoConnect={false}>
+        <WalletModalProvider>
+          {children}
+        </WalletModalProvider>
+      </WalletProvider>
+    </ConnectionProvider>
+  )
+}
+
+// Internal WalletConnect component that uses the wallet context
+function WalletConnectInternal() {
+  const { wallet, select, connect, disconnect, publicKey, connected, connecting } = useWallet()
+  const { setVisible } = useWalletModal()
   const [address, setAddress] = useState("")
+
+  // Update address when publicKey changes
+  useEffect(() => {
+    if (connected && publicKey) {
+      const walletAddress = publicKey.toBase58()
+      setAddress(walletAddress)
+    } else {
+      setAddress("")
+    }
+  }, [connected, publicKey])
 
   const handleConnect = async () => {
     try {
+      // If no wallet is selected, show the wallet modal
+      if (!wallet) {
+        setVisible(true)
+        return
+      }
+
+      // Connect to the selected wallet
       await connect()
+      
       if (publicKey) {
         const walletAddress = publicKey.toBase58()
         setAddress(walletAddress)
@@ -28,12 +80,25 @@ export function WalletConnect() {
       }
     } catch (error) {
       console.error('Failed to connect wallet:', error)
+      // If connection fails, show the wallet modal to allow user to select a different wallet
+      if (error.name === 'WalletNotSelectedError' || error.name === 'WalletConnectionError') {
+        setVisible(true)
+      }
     }
   }
 
   const handleDisconnect = async () => {
-    await disconnect()
-    setAddress("")
+    try {
+      await disconnect()
+      setAddress("")
+    } catch (error) {
+      console.error('Failed to disconnect wallet:', error)
+    }
+  }
+
+  // Alternative approach: Use wallet modal for connection
+  const handleConnectWithModal = () => {
+    setVisible(true)
   }
 
   if (connected && publicKey) {
@@ -54,19 +119,22 @@ export function WalletConnect() {
   }
 
   return (
-    <button onClick={handleConnect} className="cyber-button flex items-center gap-2">
+    <button 
+      onClick={handleConnectWithModal} // Use modal approach for better UX
+      disabled={connecting}
+      className={`cyber-button flex items-center gap-2 ${connecting ? 'opacity-50 cursor-not-allowed' : ''}`}
+    >
       <Wallet className="w-5 h-5" />
-      Connect Wallet
+      {connecting ? 'Connecting...' : 'Connect Wallet'}
     </button>
   )
 }
 
-export default function WalletConnectWithProviders() {
+// Main WalletConnect component that provides the context
+export function WalletConnect() {
   return (
-    <ConnectionProvider endpoint={endpoint}>
-      <WalletProvider wallets={wallets} autoConnect>
-        <WalletConnect />
-      </WalletProvider>
-    </ConnectionProvider>
+    <WalletProviderWrapper>
+      <WalletConnectInternal />
+    </WalletProviderWrapper>
   )
 }
