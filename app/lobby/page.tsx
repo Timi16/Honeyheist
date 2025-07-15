@@ -1,10 +1,12 @@
+// page.tsx
 "use client"
 
-import { useState, useEffect } from "react"
-import { RoomCard } from "@/components/room-card"
-import { CreateRoomModal } from "@/components/create-room-modal"
-import { Plus, Search, Zap, UsersIcon, Target, Trophy } from "lucide-react"
-import socketService from "@/services/socketService" // Adjust path
+import { useState, useEffect } from "react";
+import { RoomCard } from "@/components/room-card";
+import { CreateRoomModal } from "@/components/create-room-modal";
+import { Plus, Search, Zap, UsersIcon, Target, Trophy } from "lucide-react";
+import socketService from "@/services/socketService";
+import { useAppContext } from '@/contexts/AppContext';
 
 // Define the Room interface
 interface Room {
@@ -18,84 +20,84 @@ interface Room {
   description?: string;
 }
 
+// LobbyPage component
 export default function LobbyPage() {
-  // Type the rooms state as Room[]
-  const [rooms, setRooms] = useState<Room[]>([])
-  const [showCreateModal, setShowCreateModal] = useState(false)
-  const [searchTerm, setSearchTerm] = useState("")
-  const [difficultyFilter, setDifficultyFilter] = useState("all")
-  const [walletAddress] = useState("0x1234") // Assume this comes from wallet connection
+  // State declarations
+  const [rooms, setRooms] = useState<Room[]>([]);
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [difficultyFilter, setDifficultyFilter] = useState("all");
 
-  // Fetch initial rooms from API
+  // Get wallet authentication details from AppContext
+  const { walletAddress, isAuthenticated } = useAppContext();
+
+  // Fetch initial rooms from API on component mount
   useEffect(() => {
     const fetchRooms = async () => {
       try {
-        const response = await fetch('http://localhost:5000/api/rooms')
-        const data = await response.json()
-        // Map API data to Room objects, adding reward
+        const response = await fetch('http://localhost:5000/api/rooms');
+        const data = await response.json();
         setRooms(data.map((room: any) => ({
           ...room,
-          reward: getReward(room.difficulty)
-        })))
+          reward: getReward(room.difficulty),
+        })));
       } catch (error) {
-        console.error("Error fetching rooms:", error)
+        console.error("Error fetching rooms:", error);
       }
-    }
-    fetchRooms()
-  }, [])
+    };
+    fetchRooms();
+  }, []);
 
-  // Authenticate and listen for WebSocket events
+  // Set up WebSocket listeners when authenticated
   useEffect(() => {
-    if (walletAddress) {
-      socketService.authenticate(walletAddress)
-        .then(() => console.log("Authenticated"))
-        .catch((error) => console.error("Authentication error:", error.message))
+    if (isAuthenticated && walletAddress) {
+      // Listener for new rooms
+      socketService.onNewRoom((room: Omit<Room, 'reward'>) => {
+        setRooms((prevRooms) => [
+          ...prevRooms,
+          { ...room, reward: getReward(room.difficulty) },
+        ]);
+      });
+
+      // Listener for room updates
+      socketService.onUpdateRoom((data: { roomId: string | number; players: number }) => {
+        setRooms((prevRooms) =>
+          prevRooms.map((room) =>
+            room.id === data.roomId ? { ...room, players: data.players } : room
+          )
+        );
+      });
+
+      // Cleanup listeners on unmount
+      return () => {
+        socketService.offNewRoom();
+        socketService.offUpdateRoom();
+      };
     }
+  }, [isAuthenticated, walletAddress]);
 
-    // Type the room parameter for onNewRoom
-    socketService.onNewRoom((room: Omit<Room, 'reward'>) => {
-      setRooms((prevRooms) => [
-        ...prevRooms,
-        { ...room, reward: getReward(room.difficulty) }
-      ])
-    })
-
-    // Type the data parameter for onUpdateRoom
-    socketService.onUpdateRoom((data: { roomId: string | number; players: number }) => {
-      setRooms((prevRooms) =>
-        prevRooms.map((room) =>
-          room.id === data.roomId ? { ...room, players: data.players } : room
-        )
-      )
-    })
-
-    // Cleanup listeners
-    return () => {
-      socketService.offNewRoom()
-      socketService.offUpdateRoom()
-    }
-  }, [walletAddress])
-
-  // Update getReward to accept string type
+  // Function to determine reward based on difficulty
   const getReward = (difficulty: string) => {
     switch (difficulty) {
-      case "easy": return "500-1000 HONEY"
-      case "medium": return "2000-5000 HONEY"
-      case "hard": return "6000-10000 HONEY"
-      default: return "0 HONEY"
+      case "easy": return "500-1000 HONEY";
+      case "medium": return "2000-5000 HONEY";
+      case "hard": return "6000-10000 HONEY";
+      default: return "0 HONEY";
     }
-  }
+  };
 
-  // Filter rooms with type-safe properties
+  // Filter rooms based on search term and difficulty
   const filteredRooms = rooms.filter((room) => {
-    const matchesSearch = room.name.toLowerCase().includes(searchTerm.toLowerCase())
-    const matchesDifficulty = difficultyFilter === "all" || room.difficulty.toLowerCase() === difficultyFilter
-    return matchesSearch && matchesDifficulty
-  })
+    const matchesSearch = room.name.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesDifficulty = difficultyFilter === "all" || room.difficulty.toLowerCase() === difficultyFilter;
+    return matchesSearch && matchesDifficulty;
+  });
 
+  // Render the lobby page
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-purple-900/20 to-cyan-900/20 p-4 sm:p-6">
       <div className="max-w-7xl mx-auto">
+        {/* Header section */}
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 sm:mb-8">
           <div>
             <h1 className="text-3xl sm:text-4xl font-bold mb-2 neon-glow">
@@ -118,6 +120,7 @@ export default function LobbyPage() {
           </button>
         </div>
 
+        {/* Search and filter section */}
         <div className="cyber-card mb-6 sm:mb-8">
           <div className="flex flex-col sm:flex-row gap-4">
             <div className="relative flex-1">
@@ -153,12 +156,14 @@ export default function LobbyPage() {
           </div>
         </div>
 
+        {/* Rooms grid */}
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
           {filteredRooms.map((room) => (
             <RoomCard key={room.id} room={room} />
           ))}
         </div>
 
+        {/* No rooms found message */}
         {filteredRooms.length === 0 && (
           <div className="text-center py-12">
             <div className="cyber-card max-w-md mx-auto">
@@ -169,6 +174,7 @@ export default function LobbyPage() {
           </div>
         )}
 
+        {/* Statistics section */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mt-8 sm:mt-12">
           {[
             { label: "Active Rooms", value: rooms.length, color: "text-cyan-400", icon: Target },
@@ -190,7 +196,8 @@ export default function LobbyPage() {
         </div>
       </div>
 
+      {/* Create Room Modal */}
       <CreateRoomModal isOpen={showCreateModal} onClose={() => setShowCreateModal(false)} />
     </div>
-  )
+  );
 }
