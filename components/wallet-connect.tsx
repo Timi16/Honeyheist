@@ -21,19 +21,41 @@ export function WalletProviderWrapper({ children }: { children: React.ReactNode 
   const network = 'devnet'
   const endpoint = useMemo(() => clusterApiUrl(network), [network])
 
-  const wallets = useMemo(
-    () => [
-      new PhantomWalletAdapter(),
-      new SolflareWalletAdapter(),
-    ].filter((adapter, index, array) => 
+  // Only include wallets that aren't already registered as Standard Wallets
+  const wallets = useMemo(() => {
+    const walletAdapters = []
+    
+    // Check if Phantom is available as Standard Wallet
+    const isPhantomStandard = typeof window !== 'undefined' && 
+      window.phantom?.solana?.isPhantom
+    
+    // Only add Phantom adapter if not available as Standard Wallet
+    if (!isPhantomStandard) {
+      walletAdapters.push(new PhantomWalletAdapter())
+    }
+    
+    // Solflare typically doesn't conflict with Standard Wallet
+    walletAdapters.push(new SolflareWalletAdapter())
+    
+    return walletAdapters.filter((adapter, index, array) => 
       array.findIndex(a => a.name === adapter.name) === index
-    ),
-    []
-  )
+    )
+  }, [])
 
   return (
     <ConnectionProvider endpoint={endpoint}>
-      <WalletProvider wallets={wallets} autoConnect={false}>
+      <WalletProvider 
+        wallets={wallets} 
+        autoConnect={false}
+        onError={(error) => {
+          console.error('Wallet error:', error)
+          // Ignore MetaMask-related errors for Solana wallets
+          if (error.message?.includes('MetaMask') || 
+              error.message?.includes('ethereum')) {
+            return
+          }
+        }}
+      >
         <WalletModalProvider>
           {children}
         </WalletModalProvider>
@@ -58,6 +80,85 @@ function WalletConnectInternal() {
     }
   }, [connected, publicKey])
 
+  // Auto-connect when wallet is selected
+  useEffect(() => {
+    if (wallet && !connected && !connecting) {
+      // Small delay to ensure wallet is fully loaded
+      const timer = setTimeout(() => {
+        handleWalletConnect()
+      }, 100)
+      return () => clearTimeout(timer)
+    }
+  }, [wallet, connected, connecting])
+
+  const handleWalletConnect = async () => {
+    if (!wallet) return
+
+    try {
+      // For Standard Wallets, the readyState check is different
+      const isReady = wallet.readyState === 'Installed' || 
+                     wallet.readyState === 'Loadable' ||
+                     wallet.readyState === 'NotDetected'
+
+      if (isReady || wallet.readyState === 'Installed') {
+        await connect()
+        
+        if (publicKey) {
+          const walletAddress = publicKey.toBase58()
+          setAddress(walletAddress)
+          try {
+            await connectWallet(walletAddress)
+          } catch (error) {
+            console.error('Failed to save wallet to backend:', error)
+          }
+        }
+      } else {
+        // Wallet not installed - redirect to install
+        console.log(`${wallet.name} not installed, redirecting to install...`)
+        
+        const installUrl = getWalletInstallUrl(wallet.name)
+        if (installUrl) {
+          const shouldInstall = confirm(`${wallet.name} is not installed. Would you like to install it now?`)
+          if (shouldInstall) {
+            window.open(installUrl, '_blank')
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Failed to connect wallet:', error)
+      
+      // Handle specific error cases
+      if (error.name === 'WalletNotReadyError' || error.message?.includes('not installed')) {
+        const installUrl = getWalletInstallUrl(wallet.name)
+        if (installUrl) {
+          const shouldInstall = confirm(`${wallet.name} is not installed. Would you like to install it now?`)
+          if (shouldInstall) {
+            window.open(installUrl, '_blank')
+          }
+        }
+      } else if (error.name === 'WalletConnectionError') {
+        console.error('Wallet connection failed:', error.message)
+        // Don't show alert for connection rejections
+        if (!error.message?.includes('rejected') && !error.message?.includes('cancelled')) {
+          alert('Failed to connect to wallet. Please try again.')
+        }
+      }
+    }
+  }
+
+  const getWalletInstallUrl = (walletName: string): string | null => {
+    const installUrls: Record<string, string> = {
+      'Phantom': 'https://phantom.app/',
+      'Solflare': 'https://solflare.com/',
+      'Backpack': 'https://backpack.app/',
+      'Glow': 'https://glow.app/',
+      'Coin98': 'https://coin98.com/wallet',
+      'Slope': 'https://slope.finance/'
+    }
+    
+    return installUrls[walletName] || null
+  }
+
   const handleConnect = async () => {
     try {
       // If no wallet is selected, show the wallet modal
@@ -66,24 +167,9 @@ function WalletConnectInternal() {
         return
       }
 
-      // Connect to the selected wallet
-      await connect()
-      
-      if (publicKey) {
-        const walletAddress = publicKey.toBase58()
-        setAddress(walletAddress)
-        try {
-          await connectWallet(walletAddress)
-        } catch (error) {
-          console.error('Failed to save wallet to backend:', error)
-        }
-      }
+      await handleWalletConnect()
     } catch (error) {
       console.error('Failed to connect wallet:', error)
-      // If connection fails, show the wallet modal to allow user to select a different wallet
-      if (error.name === 'WalletNotSelectedError' || error.name === 'WalletConnectionError') {
-        setVisible(true)
-      }
     }
   }
 
@@ -96,7 +182,7 @@ function WalletConnectInternal() {
     }
   }
 
-  // Alternative approach: Use wallet modal for connection
+  // Show wallet selection modal
   const handleConnectWithModal = () => {
     setVisible(true)
   }

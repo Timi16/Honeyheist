@@ -1,9 +1,8 @@
 "use client"
 
-import type React from "react"
-
 import { useState } from "react"
 import { X, Plus } from "lucide-react"
+import socketService from "@/services/socketService" // Adjust path
 
 interface CreateRoomModalProps {
   isOpen: boolean
@@ -17,17 +16,20 @@ export function CreateRoomModal({ isOpen, onClose }: CreateRoomModalProps) {
 
   if (!isOpen) return null
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    // Handle room creation
-    console.log({ roomName, difficulty, maxPlayers })
-    onClose()
+    const roomData = { name: roomName, difficulty, maxPlayers }
+    try {
+      await socketService.createRoom(roomData)
+      onClose()
+    } catch (error) {
+      console.error("Error creating room:", error.message)
+    }
   }
 
   return (
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
       <div className="cyber-card max-w-md w-full">
-        {/* Header */}
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-2xl font-bold flex items-center gap-2">
             <Plus className="w-6 h-6 text-cyan-400" />
@@ -38,7 +40,6 @@ export function CreateRoomModal({ isOpen, onClose }: CreateRoomModalProps) {
           </button>
         </div>
 
-        {/* Form */}
         <form onSubmit={handleSubmit} className="space-y-6">
           <div>
             <label className="block text-sm font-medium text-gray-300 mb-2">Room Name</label>
