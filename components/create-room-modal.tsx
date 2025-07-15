@@ -3,6 +3,7 @@
 import { useState } from "react"
 import { X, Plus } from "lucide-react"
 import socketService from "@/services/socketService" // Adjust path
+import { useAppContext } from '@/contexts/AppContext' // Import the context hook
 
 interface CreateRoomModalProps {
   isOpen: boolean
@@ -13,11 +14,16 @@ export function CreateRoomModal({ isOpen, onClose }: CreateRoomModalProps) {
   const [roomName, setRoomName] = useState("")
   const [difficulty, setDifficulty] = useState("medium")
   const [maxPlayers, setMaxPlayers] = useState(4)
+  const { isAuthenticated } = useAppContext() // Access authentication status
 
   if (!isOpen) return null
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    if (!isAuthenticated) {
+      alert("Please connect your wallet to create a room.")
+      return
+    }
     const roomData = { name: roomName, difficulty, maxPlayers }
     try {
       await socketService.createRoom(roomData)
@@ -39,6 +45,10 @@ export function CreateRoomModal({ isOpen, onClose }: CreateRoomModalProps) {
             <X className="w-6 h-6" />
           </button>
         </div>
+
+        {!isAuthenticated && (
+          <p className="text-red-400 mb-4">Please connect your wallet to create a room.</p>
+        )}
 
         <form onSubmit={handleSubmit} className="space-y-6">
           <div>
@@ -91,7 +101,7 @@ export function CreateRoomModal({ isOpen, onClose }: CreateRoomModalProps) {
             >
               Cancel
             </button>
-            <button type="submit" className="flex-1 cyber-button">
+            <button type="submit" className="flex-1 cyber-button" disabled={!isAuthenticated}>
               Create Room
             </button>
           </div>
