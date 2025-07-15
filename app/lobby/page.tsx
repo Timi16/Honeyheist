@@ -1,12 +1,12 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { useWallet } from '@solana/wallet-adapter-react'
 import { RoomCard } from "@/components/room-card"
 import { CreateRoomModal } from "@/components/create-room-modal"
 import { Plus, Search, Zap, UsersIcon, Target, Trophy } from "lucide-react"
-import socketService from "@/services/socketService"
+import socketService from "@/services/socketService" // Adjust path
 
+// Define the Room interface
 interface Room {
   id: string | number;
   name: string;
@@ -19,19 +19,20 @@ interface Room {
 }
 
 export default function LobbyPage() {
-  const { publicKey, connected } = useWallet()
-  const walletAddress = publicKey?.toBase58() || null
-
+  // Type the rooms state as Room[]
   const [rooms, setRooms] = useState<Room[]>([])
   const [showCreateModal, setShowCreateModal] = useState(false)
   const [searchTerm, setSearchTerm] = useState("")
   const [difficultyFilter, setDifficultyFilter] = useState("all")
+  const [walletAddress] = useState("0x1234") // Assume this comes from wallet connection
 
+  // Fetch initial rooms from API
   useEffect(() => {
     const fetchRooms = async () => {
       try {
         const response = await fetch('http://localhost:5000/api/rooms')
         const data = await response.json()
+        // Map API data to Room objects, adding reward
         setRooms(data.map((room: any) => ({
           ...room,
           reward: getReward(room.difficulty)
@@ -43,6 +44,7 @@ export default function LobbyPage() {
     fetchRooms()
   }, [])
 
+  // Authenticate and listen for WebSocket events
   useEffect(() => {
     if (walletAddress) {
       socketService.authenticate(walletAddress)
@@ -50,6 +52,7 @@ export default function LobbyPage() {
         .catch((error) => console.error("Authentication error:", error.message))
     }
 
+    // Type the room parameter for onNewRoom
     socketService.onNewRoom((room: Omit<Room, 'reward'>) => {
       setRooms((prevRooms) => [
         ...prevRooms,
@@ -57,6 +60,7 @@ export default function LobbyPage() {
       ])
     })
 
+    // Type the data parameter for onUpdateRoom
     socketService.onUpdateRoom((data: { roomId: string | number; players: number }) => {
       setRooms((prevRooms) =>
         prevRooms.map((room) =>
@@ -65,12 +69,14 @@ export default function LobbyPage() {
       )
     })
 
+    // Cleanup listeners
     return () => {
       socketService.offNewRoom()
       socketService.offUpdateRoom()
     }
   }, [walletAddress])
 
+  // Update getReward to accept string type
   const getReward = (difficulty: string) => {
     switch (difficulty) {
       case "easy": return "500-1000 HONEY"
@@ -80,22 +86,12 @@ export default function LobbyPage() {
     }
   }
 
+  // Filter rooms with type-safe properties
   const filteredRooms = rooms.filter((room) => {
     const matchesSearch = room.name.toLowerCase().includes(searchTerm.toLowerCase())
     const matchesDifficulty = difficultyFilter === "all" || room.difficulty.toLowerCase() === difficultyFilter
     return matchesSearch && matchesDifficulty
   })
-
-  if (!connected) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-900 via-purple-900/20 to-cyan-900/20 p-4 sm:p-6">
-        <div className="max-w-7xl mx-auto text-center py-12">
-          <h2 className="text-2xl font-bold text-white mb-4">Connect Your Wallet</h2>
-          <p className="text-gray-400">Please connect your Solana wallet to join the lobby.</p>
-        </div>
-      </div>
-    )
-  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-purple-900/20 to-cyan-900/20 p-4 sm:p-6">
@@ -112,6 +108,7 @@ export default function LobbyPage() {
               Choose your next target • {rooms.length} active rooms
             </p>
           </div>
+
           <button
             onClick={() => setShowCreateModal(true)}
             className="cyber-button flex items-center gap-2 mt-4 md:mt-0 w-full md:w-auto justify-center"
@@ -130,19 +127,23 @@ export default function LobbyPage() {
                 placeholder="Search rooms by name..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-3 bg-gray-800/80 border border-cyan-400/30 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-cyan-400 text-sm sm:text-base"
+                className="w-full pl-10 pr-4 py-3 bg-gray-800/80 border border-cyan-400/30 rounded-lg 
+                         text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-cyan-400 text-sm sm:text-base"
               />
             </div>
+
             <select
               value={difficultyFilter}
               onChange={(e) => setDifficultyFilter(e.target.value)}
-              className="px-4 py-3 bg-gray-800/80 border border-cyan-400/30 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-cyan-400 text-sm sm:text-base"
+              className="px-4 py-3 bg-gray-800/80 border border-cyan-400/30 rounded-lg 
+                       text-white focus:outline-none focus:ring-2 focus:ring-cyan-400 text-sm sm:text-base"
             >
               <option value="all">All Difficulties</option>
               <option value="easy">Easy</option>
               <option value="medium">Medium</option>
               <option value="hard">Hard</option>
             </select>
+
             <div className="flex items-center gap-2 px-4 py-3 bg-gray-800/80 border border-cyan-400/30 rounded-lg">
               <UsersIcon className="w-5 h-5 text-cyan-400" />
               <span className="text-white text-sm sm:text-base">
@@ -171,7 +172,12 @@ export default function LobbyPage() {
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mt-8 sm:mt-12">
           {[
             { label: "Active Rooms", value: rooms.length, color: "text-cyan-400", icon: Target },
-            { label: "Players Online", value: rooms.reduce((acc, room) => acc + room.players, 0), color: "text-green-400", icon: UsersIcon },
+            {
+              label: "Players Online",
+              value: rooms.reduce((acc, room) => acc + room.players, 0),
+              color: "text-green-400",
+              icon: UsersIcon,
+            },
             { label: "Total Rewards", value: "26.5K", color: "text-yellow-400", icon: Trophy },
             { label: "Success Rate", value: "73%", color: "text-purple-400", icon: Zap },
           ].map((stat, index) => (
@@ -183,6 +189,7 @@ export default function LobbyPage() {
           ))}
         </div>
       </div>
+
       <CreateRoomModal isOpen={showCreateModal} onClose={() => setShowCreateModal(false)} />
     </div>
   )
